@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS学习记事本</title>
+<link rel="stylesheet" href="CS学习记事本.css">
+</head>
+<body>
+
+<div id="sidebarOverlay"></div>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <h1><span class="logo">📘</span> CS学习记事本</h1>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="🔍 搜索笔记…" autocomplete="off">
+      <button class="clear-btn" id="clearSearch" title="清除">✕</button>
+    </div>
+    <nav class="category-list" id="categoryList"></nav>
+    <button class="add-cat-btn" id="btnAddCategory">＋ 添加分类</button>
+    <div class="sidebar-footer" id="statsDisplay">共 0 条笔记</div>
+  </aside>
+
+  <div class="main-area">
+    <div class="toolbar">
+      <button class="btn btn-icon" id="btnToggleSidebar" title="菜单">☰</button>
+      <button class="btn btn-primary" id="btnNewNote">＋ 新建笔记</button>
+      <button class="btn" id="btnExport">📥 导出</button>
+        <button class="btn" id="btnOpenFile">📂 打开文件</button>
+        <input type="file" id="fileInput" style="display:none" accept=".txt,.md,.js,.py,.c,.cpp,.java,.json,.xml,.csv,.html,.css,.ts,.rs,.go,.yaml,.yml,.toml,.ini,.cfg,.log,.sh,.bat,.ps1">
+      <span class="toolbar-spacer"></span>
+      <div class="sort-group">
+        <span>排序:</span>
+        <select id="sortSelect">
+          <option value="updatedAt-desc">最近修改</option>
+          <option value="updatedAt-asc">最早修改</option>
+          <option value="createdAt-desc">最近创建</option>
+          <option value="title-asc">标题 A-Z</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="noteListWrap">
+      <div id="noteList"></div>
+    </div>
+
+    <div id="vPaneDivider" class="v-divider"></div>
+
+    <div id="editorPanel">
+      <div class="editor-toolbar">
+        <input type="text" id="noteTitle" placeholder="笔记标题…" maxlength="200">
+        <select id="noteCategory"></select>
+        <button class="btn btn-sm btn-primary" id="btnSaveNote">💾 保存</button>
+        <button class="btn btn-sm btn-danger" id="btnDeleteNote">🗑 删除</button>
+      </div>
+      <div class="editor-body">
+        <textarea id="editorTextarea" placeholder="在此编写 Markdown…
+
+## 标题
+内容支持 **粗体** *斜体* `代码`
+
+```python
+print('代码块')
+```
+
+- 列表项
+- [x] 已完成任务
+
+> 引用"></textarea>
+        <div id="paneDivider"></div>
+        <div class="preview-pane">
+          <button class="preview-fullscreen-btn" id="btnPreviewFullscreen" title="全屏预览">⛶</button>
+          <div id="previewContent"></div>
+        </div>
+      </div>
+      <div class="editor-footer">
+        <span id="saveStatus">✅ 已保存</span>
+            <span class="file-indicator" id="fileIndicator" style="display:none">📄 <span id="fileNameDisplay"></span></span>
+        <span id="lastSavedTime" style="color: var(--text-muted)"></span>
+        <span class="right">
+          <button class="btn btn-sm" id="btnFormatBold" title="Ctrl+B">B</button>
+          <button class="btn btn-sm" id="btnFormatItalic" title="Ctrl+I"><i>I</i></button>
+          <button class="btn btn-sm" id="btnFormatCode" title="Ctrl+`">&lt;/&gt;</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="categoryDialog">
+  <div class="modal">
+    <h2>📁 新建学习分类</h2>
+    <label>分类名称</label>
+    <input type="text" id="catNameInput" placeholder="输入分类名称…" maxlength="30">
+    <label>选择图标</label>
+    <div class="icon-picker" id="iconPicker"></div>
+    <div class="modal-actions">
+      <button class="btn" id="catCancel">取消</button>
+      <button class="btn btn-primary" id="catOk">✅ 创建</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmDialog">
+  <div class="modal">
+    <h2 id="confirmTitle">确认删除？</h2>
+    <p id="confirmMsg">此操作不可撤销。</p>
+    <div class="modal-actions">
+      <button class="btn" id="confirmCancel">取消</button>
+      <button class="btn btn-danger" id="confirmOk">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportDialog">
+  <div class="modal">
+    <h2>导出笔记</h2>
+    <p>选择导出范围和格式：</p>
+    <select id="exportScope">
+      <option value="current">当前笔记</option>
+      <option value="category">当前分类</option>
+      <option value="all">全部笔记</option>
+    </select>
+    <select id="exportFormat">
+      <option value="md">Markdown (.md)</option>
+      <option value="txt">纯文本 (.txt)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" id="exportCancel">取消</button>
+      <button class="btn btn-primary" id="exportOk">📥 下载</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script src="CS学习记事本.js"></script>
+</body>
+</html>
