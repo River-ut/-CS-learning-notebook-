@@ -8,11 +8,13 @@ import { getAllCategories, getCategoryById } from './categories.js';
 import { MD } from './markdown.js';
 import { Notes } from './notes.js';
 import { state, loadState, saveState } from './state.js';
+import { processImageFile } from './images.js';
 
 export const UI = {
   _dom: {},
   _fileHandle: null,
   _fileName: null,
+  _bound: false,
 
   init() {
     const ids = [
@@ -22,9 +24,10 @@ export const UI = {
       'saveStatus','lastSavedTime','btnSaveNote','btnDeleteNote',
       'btnFormatBold','btnFormatItalic','btnFormatCode',
       'vPaneDivider','btnPreviewFullscreen',
-      'categoryDialog','catNameInput','catOk','catCancel','fileInput','fileIndicator','fileNameDisplay','confirmDialog','confirmTitle','confirmMsg','confirmCancel','confirmOk',
+      'categoryDialog','catNameInput','catOk','catCancel','fileInput','imageInput','fileIndicator','fileNameDisplay','confirmDialog','confirmTitle','confirmMsg','confirmCancel','confirmOk',
       'exportDialog','exportScope','exportFormat','exportCancel','exportOk',
-      'toastContainer','sidebarOverlay'
+      'toastContainer','sidebarOverlay',
+      'btnInsertImage','imageViewer','imageViewerImg'
     ];
     ids.forEach(id => { this._dom[id] = document.getElementById(id); });
 
@@ -46,7 +49,7 @@ export const UI = {
     }
 
     this._renderNoteList();
-    this._bindEvents();
+    if (!this._bound) { this._bindEvents(); this._bound = true; }
 
     if (window.innerWidth <= 768) {
       this._dom.sidebar.classList.remove('open');
@@ -89,7 +92,7 @@ export const UI = {
       const titleClass = n.title ? '' : ' untitled';
       const cat = getAllCategories().find(cat => cat.id === n.category);
       const catName = cat ? cat.name : n.category;
-      const preview = truncate(n.content.replace(/[#*`\[\]>\-|]/g, ''), 120);
+      const preview = truncate(n.content.replace(/!\[[^\]]*\]\([^)]*\)/g, '[图片]').replace(/[#*`\[\]>\-|]/g, ''), 120);
       const time = formatRelative(n.updatedAt);
       return '<div class="note-card' + active + '" data-id="' + n.id + '"><div class="note-card-header">' + (n.isPinned ? '<span class="note-card-pin">📌</span>' : '') + '<span class="note-card-title' + titleClass + '">' + escapeHTML(title) + '</span><span class="note-card-cat">' + catName + '</span></div><div class="note-card-preview">' + escapeHTML(preview) + '</div><div class="note-card-meta"><span>' + time + '</span><span class="note-card-actions"><button class="pin-btn" data-action="pin" data-id="' + n.id + '" title="置顶">📌</button><button class="btn-del" data-action="delete-card" data-id="' + n.id + '" title="删除">🗑</button></span></div></div>';
     }).join('');
@@ -141,17 +144,22 @@ export const UI = {
     const title = this._dom.noteTitle.value;
     const category = this._dom.noteCategory.value;
     const content = this._dom.editorTextarea.value;
-    this._dom.previewContent.innerHTML = MD.parse(content);
     Notes.update(id, { title, category, content });
     this._dom.saveStatus.innerHTML = '💾 输入中…';
     this._dom.saveStatus.className = '';
     this._scheduleAutoSave();
+    this._schedulePreview();
   },
 
   _scheduleAutoSave: debounce(function () {
     Notes.flushPersist();
     this._markSaved(true);
   }, 800),
+
+  _schedulePreview: debounce(function () {
+    if (!Notes._activeId) return;
+    this._dom.previewContent.innerHTML = MD.parse(this._dom.editorTextarea.value);
+  }, 150),
 
   _markSaved(isAuto) {
     this._dom.saveStatus.innerHTML = isAuto ? '✅ 已自动保存' : '✅ 已保存';
@@ -228,8 +236,54 @@ export const UI = {
     ta.focus(); this._handleEditorInput();
   },
 
+  // ========== Image Insert ==========
+
+  _insertImage() {
+    if (!Notes._activeId) { this.showToast('请先打开或新建一篇笔记', 'info'); return; }
+    this._dom.imageInput.click();
+  },
+
+  async _insertImageFile(file) {
+    if (!Notes._activeId) { this.showToast('请先打开或新建一篇笔记', 'info'); return; }
+    if (!file || !file.type || !file.type.startsWith('image/')) { this.showToast('请选择图片文件', 'error'); return; }
+    this.showToast('正在处理图片…', 'info');
+    try {
+      const { dataUrl, width, height } = await processImageFile(file);
+      this._insertMarkdown('![图片](' + dataUrl + ')');
+      const mb = Math.round((dataUrl.length * 3 / 4 / 1024 / 1024) * 10) / 10;
+      if (mb >= 1.5) {
+        this.showToast('图片已插入（约 ' + mb + ' MB，' + width + '×' + height + '）。浏览器 localStorage 容量约 5MB，图片过多可能存不下', 'info');
+      } else {
+        this.showToast('图片已插入' + (mb >= 0.1 ? '（约 ' + mb + ' MB）' : ''), 'success');
+      }
+    } catch (err) {
+      console.error('图片插入失败:', err);
+      this.showToast('图片处理失败', 'error');
+    }
+  },
+
+  _insertMarkdown(text) {
+    const ta = this._dom.editorTextarea;
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    ta.setRangeText(text, start, end, 'end');
+    ta.focus();
+    this._handleEditorInput();
+  },
+
+  _openImageViewer(src) {
+    this._dom.imageViewerImg.src = src;
+    this._dom.imageViewer.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  _closeImageViewer() {
+    this._dom.imageViewer.classList.remove('open');
+    this._dom.imageViewerImg.src = '';
+    document.body.style.overflow = '';
+  },
+
   async _forceSave() {
-    Notes.flushPersist();
+    await Notes.flushPersist();
     if (this._fileHandle) {
       const ok = await this._saveToFileHandle();
       if (ok) this.showToast('已保存到文件：' + this._fileName, 'success');
@@ -239,14 +293,13 @@ export const UI = {
     this._markSaved(false);
   },
 
-  _deleteCategory(catId) {
+  async _deleteCategory(catId) {
     // Move notes in this category to 'other'
     const notes = Notes.all();
-    notes.forEach(n => { if (n.category === catId) n.category = 'other'; });
-    Notes._persist();
+    notes.forEach(n => { if (n.category === catId) Notes.update(n.id, { category: 'other' }); });
+    await Notes.flushPersist();
     // Remove custom category
-    const custom = Storage.getCustomCategories();
-    Storage.saveCustomCategories(custom.filter(c => c.id !== catId));
+    await Storage.removeCustomCategory(catId);
     // If currently filtering by this category, switch to 'all'
     if (state.settings.activeCategory === catId) {
       state.settings.activeCategory = 'all';
@@ -289,17 +342,20 @@ export const UI = {
 
     // One-time bindings
     const catDialog = document.getElementById('categoryDialog');
-    document.getElementById('catOk').onclick = () => {
+    document.getElementById('catOk').onclick = async () => {
       const name = document.getElementById('catNameInput').value.trim();
       if (!name) { this.showToast('请输入分类名称', 'error'); return; }
       const id = 'custom-' + Date.now();
-      const custom = Storage.getCustomCategories();
-      custom.push({ id, name, icon: selIcon });
-      Storage.saveCustomCategories(custom);
-      catDialog.classList.remove('open');
-      this._renderSidebar(); this._renderCategorySelect();
-      this._renderNoteList();
-      this.showToast('分类已添加：' + name, 'success');
+      try {
+        await Storage.addCustomCategory({ id, name, icon: selIcon });
+        catDialog.classList.remove('open');
+        this._renderSidebar(); this._renderCategorySelect();
+        this._renderNoteList();
+        this.showToast('分类已添加：' + name, 'success');
+      } catch (e) {
+        console.error('添加分类失败', e);
+        this.showToast('添加分类失败', 'error');
+      }
     };
     document.getElementById('catCancel').onclick = () => { catDialog.classList.remove('open'); };
     catDialog.addEventListener('click', e => { if (e.target === catDialog) catDialog.classList.remove('open'); });
@@ -501,6 +557,37 @@ export const UI = {
       ta.focus(); this._handleEditorInput();
     });
 
+    // Image insert: button + file picker + paste
+    d.btnInsertImage.addEventListener('click', () => this._insertImage());
+    d.imageInput.addEventListener('change', async () => {
+      const file = d.imageInput.files[0];
+      if (!file) return;
+      d.imageInput.value = '';
+      await this._insertImageFile(file);
+    });
+    d.editorTextarea.addEventListener('paste', (e) => {
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+      let imageFile = null;
+      for (const item of items) {
+        if (item.kind === 'file' && item.type && item.type.startsWith('image/')) {
+          imageFile = item.getAsFile();
+          break;
+        }
+      }
+      if (!imageFile) return;
+      e.preventDefault();
+      this._insertImageFile(imageFile);
+    });
+
+    // Click image in preview to view full size
+    d.previewContent.addEventListener('click', (e) => {
+      const img = e.target.closest('img');
+      if (!img) return;
+      this._openImageViewer(img.src);
+    });
+    d.imageViewer.addEventListener('click', () => this._closeImageViewer());
+
     // Pane divider
     let dragging = false;
     d.paneDivider.addEventListener('mousedown', () => {
@@ -566,6 +653,8 @@ export const UI = {
       if (ctrl && e.key === 'i') { e.preventDefault(); this._wrapSelection('*'); }
       if (ctrl && e.key === '`') { e.preventDefault(); const ta = d.editorTextarea; const s2 = ta.selectionStart, e2 = ta.selectionEnd; ta.setRangeText('`' + ta.value.substring(s2, e2) + '`', s2, e2, 'select'); ta.focus(); this._handleEditorInput(); }
       if (e.key === 'Escape') {
+        // Close image viewer first
+        if (d.imageViewer.classList.contains('open')) { this._closeImageViewer(); return; }
         // Exit fullscreen preview first
         const previewPane = d.previewContent && d.previewContent.parentElement;
         if (previewPane && previewPane.classList.contains('preview-fullscreen')) {
@@ -585,17 +674,5 @@ export const UI = {
     });
 
     window.addEventListener('beforeunload', () => Notes.flushPersist());
-
-    window.addEventListener('storage', e => {
-      if (e.key === 'cs_notebook_notes') {
-        this.showToast('笔记已在其他标签页更新', 'info');
-        Notes._notes = Storage.getNotes();
-        this._renderNoteList(); this._updateStats();
-        if (Notes._activeId) {
-          const note = Notes.get(Notes._activeId);
-          if (note) { d.noteTitle.value = note.title; d.noteCategory.value = note.category; d.editorTextarea.value = note.content; d.previewContent.innerHTML = MD.parse(note.content); }
-        }
-      }
-    });
   }
 };

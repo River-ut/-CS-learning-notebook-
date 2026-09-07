@@ -276,7 +276,17 @@ body {
 #previewContent th { background: var(--bg-surface0); color: var(--text-primary); font-weight: 600; }
 #previewContent td { color: var(--text-secondary); }
 #previewContent hr { border: none; border-top: 1px solid var(--border-color); margin: 14px 0; }
-#previewContent img { max-width: 100%; border-radius: 6px; }
+#previewContent img { max-width: 100%; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-surface0); cursor: zoom-in; display: block; margin: 8px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+#previewContent img:hover { opacity: 0.95; }
+
+/* ========== Image viewer ========== */
+.image-viewer {
+  display: none; position: fixed; inset: 0; z-index: 3000;
+  background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.image-viewer.open { display: flex; }
+.image-viewer img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
 
 /* ========== Code language badge ========== */
 #previewContent pre[data-lang]::before {
@@ -332,4 +342,45 @@ body {
 @media (max-width: 480px) {
   .toolbar { padding: 8px 10px; gap: 4px; }
   .toolbar .btn { padding: 6px 10px; font-size: 0.78rem; }
+}
+
+/* ========== Login Screen ========== */
+.login-screen {
+  display: none; position: fixed; inset: 0; z-index: 4000;
+  background: var(--bg-crust); align-items: center; justify-content: center;
+}
+.login-screen.open { display: flex; }
+.login-card {
+  width: 90%; max-width: 380px;
+  background: var(--bg-mantle); border: 1px solid var(--border-color);
+  border-radius: 12px; padding: 36px 32px;
+  box-shadow: var(--shadow-md);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.login-logo { font-size: 2.6rem; text-align: center; line-height: 1; }
+.login-app-name { font-size: 1.3rem; text-align: center; color: var(--accent); font-weight: 700; }
+.login-card h2 { font-size: 1.05rem; color: var(--text-primary); margin: 0; }
+.login-sub { font-size: 0.82rem; color: var(--text-muted); margin: -4px 0 6px; }
+.login-card input {
+  width: 100%; padding: 10px 12px;
+  background: var(--bg-surface0); border: 1px solid var(--border-color);
+  border-radius: var(--border-radius); color: var(--text-primary);
+  font-size: 0.9rem; outline: none;
+}
+.login-card input:focus { border-color: var(--accent); }
+.login-error { display: none; color: var(--red); font-size: 0.8rem; }
+.login-submit { width: 100%; justify-content: center; padding: 10px; font-size: 0.9rem; }
+.login-toggle { text-align: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 4px; }
+.login-toggle a { color: var(--accent); text-decoration: none; cursor: pointer; }
+.login-toggle a:hover { text-decoration: underline; }
+
+/* ========== User footer ========== */
+.user-footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-top: 1px solid var(--border-color);
+  font-size: 0.78rem;
+}
+.user-email {
+  flex: 1; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }

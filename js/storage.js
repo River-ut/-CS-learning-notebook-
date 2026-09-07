@@ -1,26 +1,66 @@
 // ============================================================
-// STORAGE — localStorage 持久化层
+// STORAGE — 数据持久化层
+// 笔记 + 自定义分类 → Supabase（云端，跨设备同步）
+// 设置（排序/分栏/侧边栏等设备偏好）→ localStorage（每设备独立）
 // ============================================================
 import { DEFAULT_SETTINGS } from './config.js';
+import { supabase, noteToRow, rowToNote } from './supabase.js';
+
+// 自定义分类的内存缓存（登录后由 loadCustomCategories 填充，供同步读取）
+let _customCategories = [];
 
 export const Storage = {
-  getNotes() {
-    try {
-      const raw = localStorage.getItem('cs_notebook_notes');
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { console.warn('笔记数据损坏，已重置'); return []; }
+  // ========== 笔记（Supabase） ==========
+
+  async getNotes() {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(rowToNote);
   },
 
-  saveNotes(notes) {
-    try { localStorage.setItem('cs_notebook_notes', JSON.stringify(notes)); return true; }
-    catch (e) {
-      if (e.name === 'QuotaExceededError') {
-        // toast 需要 UI 模块，这里仅打印警告，调用方负责提示用户
-        console.warn('存储空间不足，请导出并清理旧笔记');
-      }
-      return false;
-    }
+  async upsertNote(note) {
+    const { error } = await supabase.from('notes').upsert(noteToRow(note), { onConflict: 'id' });
+    if (error) throw error;
   },
+
+  async deleteNote(id) {
+    const { error } = await supabase.from('notes').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // ========== 自定义分类（Supabase + 内存缓存） ==========
+
+  async loadCustomCategories() {
+    const { data, error } = await supabase.from('categories').select('*');
+    if (error) throw error;
+    _customCategories = (data || []).map(c => ({ id: c.id, name: c.name, icon: c.icon }));
+    return _customCategories;
+  },
+
+  getCustomCategories() {
+    return _customCategories;
+  },
+
+  async addCustomCategory(cat) {
+    const { error } = await supabase.from('categories').insert({ id: cat.id, name: cat.name, icon: cat.icon });
+    if (error) throw error;
+    _customCategories.push(cat);
+  },
+
+  async removeCustomCategory(id) {
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) throw error;
+    _customCategories = _customCategories.filter(c => c.id !== id);
+  },
+
+  resetCategories() {
+    _customCategories = [];
+  },
+
+  // ========== 设置（localStorage，保持不变） ==========
 
   getSettings() {
     try {
@@ -30,18 +70,5 @@ export const Storage = {
     } catch (e) { return { ...DEFAULT_SETTINGS }; }
   },
 
-  saveSettings(s) { localStorage.setItem('cs_notebook_settings', JSON.stringify(s)); },
-
-  getNoteById(id) { return this.getNotes().find(n => n.id === id) || null; },
-
-  getCustomCategories() {
-    try {
-      const raw = localStorage.getItem('cs_notebook_custom_cats');
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
-  },
-
-  saveCustomCategories(cats) {
-    localStorage.setItem('cs_notebook_custom_cats', JSON.stringify(cats));
-  }
+  saveSettings(s) { localStorage.setItem('cs_notebook_settings', JSON.stringify(s)); }
 };

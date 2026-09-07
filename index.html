@@ -8,6 +8,20 @@
 </head>
 <body>
 
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">📘</div>
+    <h1 class="login-app-name">CS学习记事本</h1>
+    <h2 id="loginTitle">登录</h2>
+    <p class="login-sub" id="loginSub">登录后即可同步你的笔记到云端</p>
+    <input type="email" id="loginEmail" placeholder="邮箱" autocomplete="username">
+    <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password">
+    <div class="login-error" id="loginError" style="display:none"></div>
+    <button class="btn btn-primary login-submit" id="loginSubmit">登录</button>
+    <p class="login-toggle"><span id="loginToggleText">没有账号？</span> <a href="#" id="loginToggle">注册</a></p>
+  </div>
+</div>
+
 <div id="sidebarOverlay"></div>
 
 <div id="app">
@@ -22,6 +36,10 @@
     <nav class="category-list" id="categoryList"></nav>
     <button class="add-cat-btn" id="btnAddCategory">＋ 添加分类</button>
     <div class="sidebar-footer" id="statsDisplay">共 0 条笔记</div>
+    <div class="user-footer" id="userFooter" style="display:none">
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn btn-sm" id="btnLogout" title="退出登录">⏻ 退出</button>
+    </div>
   </aside>
 
   <div class="main-area">
@@ -31,6 +49,7 @@
       <button class="btn" id="btnExport">📥 导出</button>
         <button class="btn" id="btnOpenFile">📂 打开文件</button>
         <input type="file" id="fileInput" style="display:none" accept=".txt,.md,.js,.py,.c,.cpp,.java,.json,.xml,.csv,.html,.css,.ts,.rs,.go,.yaml,.yml,.toml,.ini,.cfg,.log,.sh,.bat,.ps1">
+        <input type="file" id="imageInput" style="display:none" accept="image/*">
       <span class="toolbar-spacer"></span>
       <div class="sort-group">
         <span>排序:</span>
@@ -53,6 +72,7 @@
       <div class="editor-toolbar">
         <input type="text" id="noteTitle" placeholder="笔记标题…" maxlength="200">
         <select id="noteCategory"></select>
+        <button class="btn btn-sm" id="btnInsertImage" title="插入图片（也可直接 Ctrl+V 粘贴截图）">🖼 图片</button>
         <button class="btn btn-sm btn-primary" id="btnSaveNote">💾 保存</button>
         <button class="btn btn-sm btn-danger" id="btnDeleteNote">🗑 删除</button>
       </div>
@@ -133,6 +153,10 @@ print('代码块')
       <button class="btn btn-primary" id="exportOk">📥 下载</button>
     </div>
   </div>
+</div>
+
+<div class="image-viewer" id="imageViewer">
+  <img id="imageViewerImg" alt="图片预览">
 </div>
 
 <div id="toastContainer"></div>

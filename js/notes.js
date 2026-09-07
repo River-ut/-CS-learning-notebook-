@@ -1,22 +1,22 @@
 // ============================================================
-// NOTES — 笔记业务逻辑
+// NOTES — 笔记业务逻辑（内存数组 + 增量云端同步）
 // ============================================================
 import { uuid } from './utils.js';
-import { SAMPLE_NOTES } from './config.js';
 import { Storage } from './storage.js';
 
 export const Notes = {
   _notes: [],
   _activeId: null,
-  _dirty: false,
+  _dirty: new Set(),
 
-  init() {
-    this._notes = Storage.getNotes();
-    if (this._notes.length === 0 && !localStorage.getItem('cs_notebook_seeded')) {
-      this._notes = SAMPLE_NOTES.map(n => ({ ...n }));
-      localStorage.setItem('cs_notebook_seeded', '1');
-      this._persist();
-    }
+  async init() {
+    this._notes = await Storage.getNotes();
+  },
+
+  reset() {
+    this._notes = [];
+    this._activeId = null;
+    this._dirty.clear();
   },
 
   all() { return this._notes; },
@@ -31,7 +31,9 @@ export const Notes = {
     };
     this._notes.unshift(note);
     this._activeId = note.id;
-    this._persist();
+    this._dirty.add(note.id);
+    // 不在此立即入库：由调用方（如 _loadFileContent）在填充内容后统一 flushPersist，
+    // 避免「空内容」与「真实内容」两次 upsert 并发导致后者被覆盖。
     return note;
   },
 
@@ -39,23 +41,29 @@ export const Notes = {
     const note = this._notes.find(n => n.id === id);
     if (!note) return;
     Object.assign(note, fields, { updatedAt: new Date().toISOString() });
-    this._dirty = true;
+    this._dirty.add(id);
     // Actual persistence handled by UI._scheduleAutoSave (debounced 800ms)
   },
 
-  delete(id) {
+  async delete(id) {
     const idx = this._notes.findIndex(n => n.id === id);
     if (idx === -1) return;
     this._notes.splice(idx, 1);
+    this._dirty.delete(id);
     if (this._activeId === id) this._activeId = null;
-    this._persist();
+    try {
+      await Storage.deleteNote(id);
+    } catch (e) {
+      console.error('删除笔记失败', e);
+    }
   },
 
   togglePin(id) {
     const note = this._notes.find(n => n.id === id);
     if (!note) return;
     note.isPinned = !note.isPinned;
-    this._persist();
+    this._dirty.add(id);
+    this.flushPersist();
   },
 
   getFiltered(settings) {
@@ -82,7 +90,17 @@ export const Notes = {
     return filtered;
   },
 
-  _persist() { Storage.saveNotes(this._notes); this._dirty = false; },
-
-  flushPersist() { if (this._dirty) this._persist(); }
+  async flushPersist() {
+    const dirty = [...this._dirty];
+    this._dirty.clear();
+    const notes = dirty.map(id => this.get(id)).filter(Boolean);
+    for (const note of notes) {
+      try {
+        await Storage.upsertNote(note);
+      } catch (e) {
+        console.error('保存笔记失败', e);
+        this._dirty.add(note.id); // 失败重新标记，下次重试
+      }
+    }
+  }
 };
