@@ -19,12 +19,12 @@ export const UI = {
   init() {
     const ids = [
       'sidebar','searchInput','clearSearch','categoryList','statsDisplay',
-      'btnToggleSidebar','btnNewNote','btnAddCategory','btnOpenFile','btnExport','sortSelect','noteList','noteListWrap',
+      'btnToggleSidebar','btnNewNote','btnAddCategory','btnOpenFile','btnImport','btnExport','sortSelect','noteList','noteListWrap',
       'editorPanel','noteTitle','noteCategory','editorTextarea','previewContent','paneDivider',
       'saveStatus','lastSavedTime','btnSaveNote','btnDeleteNote',
       'btnFormatBold','btnFormatItalic','btnFormatCode',
       'vPaneDivider','btnPreviewFullscreen',
-      'categoryDialog','catNameInput','catOk','catCancel','fileInput','imageInput','fileIndicator','fileNameDisplay','confirmDialog','confirmTitle','confirmMsg','confirmCancel','confirmOk',
+      'categoryDialog','catNameInput','catOk','catCancel','fileInput','imageInput','importInput','fileIndicator','fileNameDisplay','confirmDialog','confirmTitle','confirmMsg','confirmCancel','confirmOk',
       'exportDialog','exportScope','exportFormat','exportCancel','exportOk',
       'toastContainer','sidebarOverlay',
       'btnInsertImage','imageViewer','imageViewerImg'
@@ -293,6 +293,25 @@ export const UI = {
     this._markSaved(false);
   },
 
+  async _importBackup(file) {
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      const notes = backup.notes || [];
+      const cats = backup.categories || [];
+      const result = await Storage.importBackup({ notes, categories: cats });
+      await Notes.init();
+      await Storage.loadCustomCategories();
+      this._renderSidebar();
+      this._renderCategorySelect();
+      this._renderNoteList();
+      this.showToast('导入成功：' + result.notes + ' 条笔记、' + result.categories + ' 个分类', 'success');
+    } catch (e) {
+      console.error('导入备份失败', e);
+      this.showToast('导入失败：' + e.message, 'error');
+    }
+  },
+
   async _deleteCategory(catId) {
     // Move notes in this category to 'other'
     const notes = Notes.all();
@@ -492,6 +511,13 @@ export const UI = {
     d.btnAddCategory.addEventListener('click', () => this._showCategoryDialog());
 
     d.btnOpenFile.addEventListener('click', () => this._openFile());
+    d.btnImport.addEventListener('click', () => d.importInput.click());
+    d.importInput.addEventListener('change', async () => {
+      const file = d.importInput.files[0];
+      if (!file) return;
+      d.importInput.value = '';
+      await this._importBackup(file);
+    });
     d.fileInput.addEventListener('change', () => {
       const file = d.fileInput.files[0];
       if (!file) return;

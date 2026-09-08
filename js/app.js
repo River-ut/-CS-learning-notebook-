@@ -13,21 +13,11 @@ async function migrateLocalData() {
   if (!rawNotes && !rawCats) return;
 
   try {
-    if (rawNotes) {
-      const remoteNotes = await Storage.getNotes();
-      if (remoteNotes.length === 0) {
-        const localNotes = JSON.parse(rawNotes);
-        for (const note of localNotes) await Storage.upsertNote(note);
-        Notes._notes = await Storage.getNotes();
-      }
-    }
-    if (rawCats) {
-      const remoteCats = Storage.getCustomCategories();
-      if (remoteCats.length === 0) {
-        const localCats = JSON.parse(rawCats);
-        for (const cat of localCats) await Storage.addCustomCategory(cat);
-      }
-    }
+    let notes = [], cats = [];
+    if (rawNotes) notes = JSON.parse(rawNotes);
+    if (rawCats) cats = JSON.parse(rawCats);
+    await Storage.importBackup({ notes, categories: cats });
+    Notes._notes = await Storage.getNotes();
     localStorage.removeItem('cs_notebook_notes');
     localStorage.removeItem('cs_notebook_custom_cats');
     localStorage.removeItem('cs_notebook_seeded');

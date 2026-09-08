@@ -56,6 +56,23 @@ export const Storage = {
     _customCategories = _customCategories.filter(c => c.id !== id);
   },
 
+  // 导入备份：笔记按 id 幂等 upsert；分类只添加不存在的（避免主键冲突）
+  async importBackup({ notes, categories }) {
+    let noteCount = 0, catCount = 0;
+    for (const n of notes) {
+      await this.upsertNote(n);
+      noteCount++;
+    }
+    await this.loadCustomCategories();
+    const existing = new Set(_customCategories.map(c => c.id));
+    for (const c of categories) {
+      if (existing.has(c.id)) continue;
+      await this.addCustomCategory(c);
+      catCount++;
+    }
+    return { notes: noteCount, categories: catCount };
+  },
+
   resetCategories() {
     _customCategories = [];
   },
