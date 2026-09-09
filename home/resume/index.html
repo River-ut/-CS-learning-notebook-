@@ -6,9 +6,32 @@
 <title>何午欤 · 简历</title>
 <link rel="stylesheet" href="/style.css">
 <style>
+  /* ===== 密码门 ===== */
+  .gate {
+    position: fixed; inset: 0; z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #e0f7fa 0%, #fff1f0 45%, #fdf0ff 100%);
+  }
+  .gate-card {
+    background: #fff; padding: 36px 32px; border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.10);
+    text-align: center; max-width: 360px; width: 90%;
+  }
+  .gate-icon { font-size: 40px; }
+  .gate-card h1 { font-size: 22px; margin: 8px 0; }
+  .gate-card p { color: var(--text-muted); margin-bottom: 20px; }
+  .gate-card input {
+    width: 100%; padding: 12px 16px; font-size: 16px; text-align: center;
+    border: 1.5px solid #e5e5e5; border-radius: 10px; outline: none;
+  }
+  .gate-card input:focus { border-color: var(--accent-3); }
+  .gate-error { color: #ff6b6b; font-size: 13px; margin-top: 10px; display: none; }
+  .gate-card .btn { margin-top: 16px; width: 100%; }
+  .back { color: var(--accent-3); text-decoration: none; font-weight: 600; }
+
+  /* ===== 简历展示 ===== */
   .resume-bar { text-align: center; padding: 24px 0 4px; }
   .resume-bar h1 { margin: 12px 0 4px; }
-  .back { color: var(--accent-3); text-decoration: none; font-weight: 600; }
   .resume-wrap { max-width: 860px; margin: 16px auto 48px; padding: 0 20px; }
   .resume-frame {
     width: 100%; height: 88vh; border: none; border-radius: 16px;
@@ -17,13 +40,60 @@
 </style>
 </head>
 <body>
-  <div class="resume-bar">
-    <a class="back" href="/">← 返回主页</a>
-    <h1>我的简历</h1>
-    <a class="btn btn-primary" href="/resume/resume.pdf" download style="margin-top: 10px">⬇ 下载 PDF</a>
+
+  <!-- 密码门 -->
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <div class="gate-icon">🔒</div>
+      <h1>简历已加密</h1>
+      <p>请输入访问密码</p>
+      <input type="password" id="pwInput" placeholder="密码" autocomplete="off" autofocus>
+      <div class="gate-error" id="gateError">密码错误，请重试</div>
+      <button class="btn btn-primary" id="pwSubmit">解锁</button>
+      <a class="back" href="/" style="display:block; margin-top: 14px">← 返回主页</a>
+    </div>
   </div>
-  <div class="resume-wrap">
-    <iframe class="resume-frame" src="/resume/resume.pdf" title="简历"></iframe>
+
+  <!-- 简历内容（解锁后显示） -->
+  <div id="resumeContent" style="display:none">
+    <div class="resume-bar">
+      <a class="back" href="/">← 返回主页</a>
+      <h1>我的简历</h1>
+      <a class="btn btn-primary" href="/resume/resume.pdf" download>⬇ 下载 PDF</a>
+    </div>
+    <div class="resume-wrap">
+      <iframe class="resume-frame" src="/resume/resume.pdf" title="简历"></iframe>
+    </div>
   </div>
+
+<script>
+  const PASSWORD = '1024';
+  const gate = document.getElementById('gate');
+  const content = document.getElementById('resumeContent');
+  const input = document.getElementById('pwInput');
+  const err = document.getElementById('gateError');
+
+  // 本次会话已解锁则直接显示
+  if (sessionStorage.getItem('resume_unlocked') === '1') {
+    gate.style.display = 'none';
+    content.style.display = 'block';
+  }
+
+  function unlock() {
+    if (input.value === PASSWORD) {
+      sessionStorage.setItem('resume_unlocked', '1');
+      gate.style.display = 'none';
+      content.style.display = 'block';
+    } else {
+      err.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  document.getElementById('pwSubmit').addEventListener('click', unlock);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') unlock(); });
+</script>
+
 </body>
 </html>
