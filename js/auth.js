@@ -51,7 +51,7 @@ export function showUser(email) {
  * 初始化登录表单与退出按钮
  * @param {{ onAuthenticated: (user: object) => void, onLogout: () => void }} handlers
  */
-export function initAuth({ onAuthenticated, onLogout }) {
+export function initAuth({ onAuthenticated, onLogout, onGuest }) {
   const emailInput = el('loginEmail');
   const passwordInput = el('loginPassword');
   const submitBtn = el('loginSubmit');
@@ -61,19 +61,26 @@ export function initAuth({ onAuthenticated, onLogout }) {
   const titleEl = el('loginTitle');
   const subEl = el('loginSub');
   const logoutBtn = el('btnLogout');
+  const guestBtn = el('tryGuest');
+  if (guestBtn) guestBtn.onclick = async () => {
+    guestBtn.disabled = true;
+    submitBtn.disabled = true;
+    try { await onGuest(); } finally { guestBtn.disabled = false; submitBtn.disabled = false; }
+  };
 
   let mode = 'login'; // 'login' | 'register'
 
   function setMode(m) {
     mode = m;
     if (titleEl) titleEl.textContent = m === 'login' ? '登录' : '注册账号';
-    if (subEl) subEl.textContent = m === 'login' ? '登录后即可同步你的笔记到云端' : '首次使用，注册一个账号';
+    if (subEl) subEl.textContent = m === 'login' ? '登录你的个人学习工作台' : '首次使用，注册一个账号';
     if (submitBtn) submitBtn.textContent = m === 'login' ? '登录' : '注册';
     if (toggleText) toggleText.textContent = m === 'login' ? '没有账号？' : '已有账号？';
     if (toggleLink) toggleLink.textContent = m === 'login' ? '注册' : '登录';
   }
 
   async function handleSubmit() {
+    if (submitBtn.disabled) return;
     if (!supabase) {
       if (errorEl) { errorEl.textContent = '未配置 Supabase：请创建 .env 并填入项目密钥后重试'; errorEl.style.display = 'block'; }
       return;
@@ -85,18 +92,19 @@ export function initAuth({ onAuthenticated, onLogout }) {
       return;
     }
     if (submitBtn) submitBtn.disabled = true;
+    if (guestBtn) guestBtn.disabled = true;
     if (errorEl) errorEl.style.display = 'none';
     try {
       if (mode === 'login') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (onAuthenticated) onAuthenticated(data.user);
+        if (onAuthenticated) await onAuthenticated(data.user);
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         if (data.session) {
           // 已关闭邮箱验证时，注册后直接登录
-          if (onAuthenticated) onAuthenticated(data.user);
+          if (onAuthenticated) await onAuthenticated(data.user);
         } else {
           if (errorEl) { errorEl.textContent = '注册成功！请查收邮箱验证链接后登录'; errorEl.style.display = 'block'; }
         }
@@ -105,6 +113,7 @@ export function initAuth({ onAuthenticated, onLogout }) {
       if (errorEl) { errorEl.textContent = friendlyAuthError(err.message); errorEl.style.display = 'block'; }
     } finally {
       if (submitBtn) submitBtn.disabled = false;
+      if (guestBtn) guestBtn.disabled = false;
     }
   }
 

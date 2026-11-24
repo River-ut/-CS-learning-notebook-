@@ -2,14 +2,23 @@
   "name": "my-tech-practice",
   "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "npm run dev:workspace",
+    "build": "npm run build:home && npm run build:workspace",
+    "preview": "npm run preview:workspace",
+    "dev:home": "vite --mode home",
+    "dev:workspace": "next dev --webpack --port 8082",
+    "build:home": "vite build --mode home",
+    "build:workspace": "next build --webpack",
+    "preview:home": "vite preview --mode home",
+    "preview:workspace": "vite preview --mode workspace"
   },
   "devDependencies": {
     "vite": "^8.2.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3"
+    "@supabase/supabase-js": "^2.112.3",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

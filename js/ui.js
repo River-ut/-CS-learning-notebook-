@@ -151,8 +151,8 @@ export const UI = {
     this._schedulePreview();
   },
 
-  _scheduleAutoSave: debounce(function () {
-    Notes.flushPersist();
+  _scheduleAutoSave: debounce(async function () {
+    await Notes.flushPersist();
     this._markSaved(true);
   }, 800),
 
@@ -162,6 +162,10 @@ export const UI = {
   }, 150),
 
   _markSaved(isAuto) {
+    if (Notes._dirty.size) {
+      this._dom.saveStatus.textContent = '⚠ 尚有内容未保存，请重试保存或导出备份';
+      return;
+    }
     this._dom.saveStatus.innerHTML = isAuto ? '✅ 已自动保存' : '✅ 已保存';
     if (this._fileHandle) {
       this._dom.saveStatus.innerHTML += ' 📄';
@@ -670,6 +674,7 @@ export const UI = {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {
+      if (document.getElementById('app').hidden) return;
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key === 'n') { e.preventDefault(); const note = Notes.create(state.settings.activeCategory); this._openEditor(note.id); this._updateStats(); this._renderNoteList(); }
       if (ctrl && e.key === 's') { e.preventDefault(); this._forceSave(); }

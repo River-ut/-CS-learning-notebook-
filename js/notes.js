@@ -91,9 +91,17 @@ export const Notes = {
   },
 
   async flushPersist() {
+    if (this._saving) await this._saving;
+    if (!this._dirty.size) return;
+    const pending = this._flushDirty();
+    this._saving = pending;
+    try { await pending; } finally { if (this._saving === pending) this._saving = null; }
+  },
+
+  async _flushDirty() {
     const dirty = [...this._dirty];
     this._dirty.clear();
-    const notes = dirty.map(id => this.get(id)).filter(Boolean);
+    const notes = dirty.map(id => this.get(id)).filter(Boolean).map(note => ({ ...note }));
     for (const note of notes) {
       try {
         await Storage.upsertNote(note);

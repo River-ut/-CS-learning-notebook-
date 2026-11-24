@@ -1,0 +1,37 @@
+:root, :root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-base: #181818; --bg-mantle: #202020; --bg-crust: #111111;
+  --bg-surface0: #2c2c2c; --bg-surface1: #3a3a3a;
+  --text-primary: #eeeeee; --text-secondary: #b6b6b6; --text-muted: #969696;
+  --accent: #e5e5e5; --accent-hover: #ffffff;
+  --border-color: #3d3d3d; --code-bg: #151515; --inline-code-bg: #303030;
+  --green: #8ed9ab; --red: #ff9c9c; --yellow: #e9ce87;
+  --peach: #eab48b; --mauve: #c6b2ef; --teal: #86d2bf;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-base: #fafafa; --bg-mantle: #ffffff; --bg-crust: #f3f3f3;
+  --bg-surface0: #eeeeee; --bg-surface1: #dedede;
+  --text-primary: #202020; --text-secondary: #595959; --text-muted: #6b6b6b;
+  --accent: #292929; --accent-hover: #101010;
+  --border-color: #dddddd; --code-bg: #f4f4f4; --inline-code-bg: #eeeeee;
+  --green: #227248; --red: #b52c3c; --yellow: #816114;
+  --peach: #9b4c1b; --mauve: #7354a2; --teal: #246e60;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.05); --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+}
+#tasksApp input, #tasksApp select, #tasksApp textarea { color-scheme: inherit; }
+.task-card:hover, .task-card.selected { background: var(--bg-surface0); }
+.theme-control { display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+.theme-control select, .theme-select { background: var(--bg-surface0); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 7px; padding: 7px; font: inherit; max-width: 110px; }
+.guest-entry { border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 18px; }
+.guest-entry .btn { width: 100%; justify-content: center; padding: 11px; }
+.guest-entry p { color: var(--text-secondary); font-size: 12px; line-height: 1.7; margin-top: 10px; }
+.toast.success, .toast.error, .toast.info { background: var(--bg-mantle); }
+.login-screen { overflow-y: auto; padding: 20px; }
+.login-card { margin: auto; }
+@media (max-width: 600px) {
+  #workspaceNav { gap: 5px; padding: 0 8px; }
+  #workspaceNav > a { display: none; }
+  #workspaceNav .btn { padding: 6px 8px; font-size: 12px; }
+  #workspaceNav .theme-select { max-width: 88px; font-size: 12px; }
+}
