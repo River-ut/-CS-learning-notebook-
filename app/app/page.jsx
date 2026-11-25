@@ -25,8 +25,9 @@ export default function Page() {
 <div id={"sidebarOverlay"}></div>
 <header id={"workspaceNav"} hidden>
   <a href={"/"} data-home="">个人主页</a><a href={"/"}>产品介绍</a><strong>学习工作台</strong>
-  <a className="btn" href={process.env.NODE_ENV === "development" ? "/papers" : "/papers.html"}>论文库</a><button className={"btn"} id={"showTasks"}>✓ 待办</button>
+<button className={"btn"} id={"showTasks"}>✓ 待办</button>
   <button className={"btn"} id={"showNotes"}>📘 笔记</button>
+  <a className="btn" href={process.env.NODE_ENV === "development" ? "/papers" : "/papers.html"}>论文库</a>
   <span id={"workspaceUser"}></span><button className={"btn"} id={"workspaceLogout"}>退出</button>
   <select className={"theme-select"} data-theme-select="" aria-label={"工作台主题"}><option value={"system"}>跟随系统</option><option value={"dark"}>深色</option><option value={"light"}>浅色</option></select>
 </header>

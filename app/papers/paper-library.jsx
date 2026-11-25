@@ -126,25 +126,25 @@ export default function PaperLibrary({ workspace }) {
   return (
     <main className="paper-library">
       <a href={workspace}>← 返回学习工作台</a>
-      <h1>论文库</h1>
+      <header className="paper-heading"><h1>论文库</h1></header>
       <p>收藏论文网址，保存文件副本，或在电脑上已选择的文件夹里按名称查找论文。</p>
       <section>
         <h2>收藏论文</h2>
         <form onSubmit={addLink}>
           <label>论文标题（可选）<input name="title" /></label>
           <label>论文网址<input type="url" name="url" placeholder="https://…" required /></label>
-          <button disabled={busy}>收藏链接</button>
+          <button className="btn btn-primary" disabled={busy}>收藏链接</button>
         </form>
         <label>保存论文文件到此浏览器<input type="file" multiple accept=".pdf,.djvu,.epub,.doc,.docx" onChange={addFiles} disabled={busy} /></label>
         <p>收藏和文件副本保存在当前浏览器。清除站点数据会删除这些内容，请保留原文件。</p>
       </section>
       <section>
         <h2>查找本地论文</h2>
-        <button disabled={busy} onClick={chooseDirectory}>选择论文文件夹</button>{' '}
+        <button className="btn" disabled={busy} onClick={chooseDirectory}>选择论文文件夹</button>{' '}
         {directory && <>
           <span>已关联：{directory.name}</span>{' '}
-          <button disabled={busy} onClick={refreshDirectory}>重新扫描</button>{' '}
-          <button disabled={busy} onClick={() => run(async () => {
+          <button className="btn" disabled={busy} onClick={refreshDirectory}>重新扫描</button>{' '}
+          <button className="btn" disabled={busy} onClick={() => run(async () => {
             await remove('directory');
             setDirectory(null);
             setLocal([]);
@@ -169,8 +169,8 @@ export default function PaperLibrary({ workspace }) {
         {!savedResults.length && <p>没有匹配的收藏。</p>}
         <ul>{savedResults.map((item) => <li key={item.id}>
           {item.kind === 'link' ? <a href={item.url} target="_blank" rel="noreferrer">{item.title}</a> : <span>{item.title}</span>}
-          {item.kind === 'file' && <button disabled={busy} onClick={() => download(item)}>下载</button>}
-          <button disabled={busy} onClick={() => run(async () => {
+          {item.kind === 'file' && <button className="btn" disabled={busy} onClick={() => download(item)}>下载</button>}
+          <button className="btn" disabled={busy} onClick={() => run(async () => {
             await remove(item.id);
             setPapers((items) => items.filter((paper) => paper.id !== item.id));
             setStatus('已从收藏移除。');
@@ -182,7 +182,7 @@ export default function PaperLibrary({ workspace }) {
         {!localResults.length && <p>没有匹配文件。可以选择目录或调整搜索词。</p>}
         <ul>{localResults.map((item) => <li key={item.path}>
           <span>{item.path}</span>
-          <button disabled={busy} onClick={() => download(item)}>下载副本</button>
+          <button className="btn" disabled={busy} onClick={() => download(item)}>下载副本</button>
         </li>)}</ul>
       </section>
     </main>

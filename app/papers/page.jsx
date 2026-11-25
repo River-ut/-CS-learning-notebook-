@@ -1,4 +1,6 @@
 import PaperLibrary from './paper-library';
+import '../../CS学习记事本.css';
+import '../../themes.css';
 import './papers.css';
 
 export const metadata = { title: '论文库 · 个人学习工作台' };

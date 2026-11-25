@@ -31,7 +31,7 @@
 .login-card { margin: auto; }
 @media (max-width: 600px) {
   #workspaceNav { gap: 5px; padding: 0 8px; }
-  #workspaceNav > a { display: none; }
+  #workspaceNav > a:not(.btn) { display: none; }
   #workspaceNav .btn { padding: 6px 8px; font-size: 12px; }
   #workspaceNav .theme-select { max-width: 88px; font-size: 12px; }
 }
